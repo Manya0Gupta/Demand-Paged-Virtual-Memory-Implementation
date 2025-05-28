@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Virtual Memory Animation</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h2 { margin-top: 30px; }
+    #frames, #page-tables { display: flex; gap: 20px; flex-wrap: wrap; }
+    .frame, .page-table {
+      border: 2px solid #444;
+      border-radius: 5px;
+      padding: 10px;
+      min-width: 150px;
+    }
+    .frame {
+      width: 100px;
+      height: 60px;
+      line-height: 60px;
+      text-align: center;
+      font-weight: bold;
+      font-size: 1.1em;
+      user-select: none;
+      background-color: #f0f0f0;
+    }
+    .free-frame {
+      background-color: #e0f7ff;
+    }
+    .occupied-frame {
+      background-color: #d0f0d0;
+    }
+    .page-fault {
+      background-color: #ffcccc;
+      border-color: #cc0000;
+    }
+    .page-hit {
+      background-color: #ccffcc;
+      border-color: #009900;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+    th, td {
+      border: 1px solid #aaa;
+      padding: 5px 8px;
+      text-align: center;
+    }
+    .page-table-title {
+      text-align: center;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+    #event-log {
+      margin-top: 20px;
+      font-size: 1.2em;
+      min-height: 30px;
+    }
+    #controls {
+      margin-top: 15px;
+    }
+    button {
+      font-size: 1em;
+      padding: 8px 12px;
+      margin-right: 10px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Virtual Memory Simulator</h1>
+
+<div id="event-log">Loading events...</div>
+
+<div id="frames-container">
+  <h2>Physical Memory Frames</h2>
+  <div id="frames"></div>
+</div>
+
+<div id="page-tables-container">
+  <h2>Process Page Tables</h2>
+  <div id="page-tables"></div>
+</div>
+
+<div id="controls">
+  <button id="prevBtn">Previous</button>
+  <button id="nextBtn">Next</button>
+  <button id="restartBtn">Restart</button>
+</div>
+
+<script>
+const framesCount = 4;
+let data = [];
+let currentIndex = 0;
+let pageTables = {};
+let physicalMemory = new Array(framesCount).fill(null);
+
+const eventLog = document.getElementById('event-log');
+const framesDiv = document.getElementById('frames');
+const pageTablesDiv = document.getElementById('page-tables');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+const restartBtn = document.getElementById('restartBtn');
+
+function initFramesUI() {
+  framesDiv.innerHTML = '';
+  for (let i = 0; i < framesCount; i++) {
+    const frameDiv = document.createElement('div');
+    frameDiv.classList.add('frame');
+    frameDiv.id = 'frame-' + i;
+    frameDiv.textContent = `Frame ${i}`;
+    framesDiv.appendChild(frameDiv);
+  }
+}
+
+function updateFramesUI() {
+  for (let i = 0; i < framesCount; i++) {
+    const frameDiv = document.getElementById('frame-' + i);
+    const occupant = physicalMemory[i];
+    frameDiv.classList.remove('page-fault', 'page-hit', 'free-frame', 'occupied-frame');
+    if (occupant) {
+      frameDiv.textContent = `P${occupant.process} Pg${occupant.page}`;
+      frameDiv.classList.add('occupied-frame');
+    } else {
+      frameDiv.textContent = `Frame ${i} (Free)`;
+      frameDiv.classList.add('free-frame');
+    }
+  }
+}
+
+function renderPageTables() {
+  pageTablesDiv.innerHTML = '';
+  for (const pid in pageTables) {
+    const tableWrapper = document.createElement('div');
+    tableWrapper.classList.add('page-table');
+
+    const title = document.createElement('div');
+    title.classList.add('page-table-title');
+    title.textContent = `Process ${pid} Page Table`;
+    tableWrapper.appendChild(title);
+
+    const table = document.createElement('table');
+    const thead = document.createElement('thead');
+    thead.innerHTML = '<tr><th>Page Number</th><th>Frame Number</th></tr>';
+    table.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+    for (const page in pageTables[pid]) {
+      const frameNum = pageTables[pid][page];
+      const row = document.createElement('tr');
+      row.innerHTML = `<td>${page}</td><td>${frameNum !== null ? frameNum : 'Not Mapped'}</td>`;
+      tbody.appendChild(row);
+    }
+
+    table.appendChild(tbody);
+    tableWrapper.appendChild(table);
+    pageTablesDiv.appendChild(tableWrapper);
+  }
+}
+
+function updateUI() {
+  if (data.length === 0) return;
+
+  if (currentIndex >= data.length) {
+    eventLog.textContent = "[✔] All processes have completed. Simulation finished.";
+    return;
+  }
+
+  const event = data[currentIndex];
+
+  let message = `[Time ${event.time}] Process ${event.process} requests Page ${event.page}.`;
+
+  if (!pageTables.hasOwnProperty(event.process)) {
+    pageTables[event.process] = {};
+  }
+
+  if (!pageTables[event.process].hasOwnProperty(event.page)) {
+    pageTables[event.process][event.page] = null;
+  }
+
+  if (event.event === 'request') {
+    const mappedFrame = pageTables[event.process][event.page];
+    if (mappedFrame !== null) {
+      highlightFrame(mappedFrame, 'page-hit');
+      message += " Page hit.";
+    } else {
+      clearFrameHighlights();
+      message += " Page not in memory. Awaiting page fault...";
+    }
+  } else if (event.event === 'page_fault') {
+    let frameToUse = physicalMemory.findIndex(f => f === null);
+    if (frameToUse === -1) {
+      frameToUse = 0;
+      const evicted = physicalMemory[frameToUse];
+      if (evicted && pageTables[evicted.process]) {
+        pageTables[evicted.process][evicted.page] = null;
+      }
+    }
+    physicalMemory[frameToUse] = { process: event.process, page: event.page };
+    pageTables[event.process][event.page] = frameToUse;
+    highlightFrame(frameToUse, 'page-fault');
+    message += " [!] Page fault handled. Page loaded into memory.";
+  }
+
+  updateFramesUI();
+  renderPageTables();
+  eventLog.textContent = message;
+}
+
+function highlightFrame(frameNum, className) {
+  clearFrameHighlights();
+  if (frameNum == null) return;
+  const frameDiv = document.getElementById('frame-' + frameNum);
+  if (frameDiv) {
+    frameDiv.classList.add(className);
+  }
+}
+
+function clearFrameHighlights() {
+  for (let i = 0; i < framesCount; i++) {
+    const frameDiv = document.getElementById('frame-' + i);
+    frameDiv.classList.remove('page-fault', 'page-hit');
+  }
+}
+
+prevBtn.onclick = () => {
+  if (currentIndex > 0) {
+    currentIndex--;
+    updateUI();
+  }
+};
+
+nextBtn.onclick = () => {
+  if (currentIndex < data.length) {
+    currentIndex++;
+    updateUI();
+  }
+};
+
+restartBtn.onclick = () => {
+  currentIndex = 0;
+  pageTables = {};
+  physicalMemory = new Array(framesCount).fill(null);
+  initFramesUI();
+  updateUI();
+};
+
+fetch('log.json')
+  .then(res => res.json())
+  .then(jsonData => {
+    data = jsonData;
+    initFramesUI();
+    updateUI();
+  })
+  .catch(err => {
+    eventLog.textContent = 'Failed to load log.json: ' + err;
+  });
+</script>
+
+</body>
+</html>
+

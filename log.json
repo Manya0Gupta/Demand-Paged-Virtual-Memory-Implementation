@@ -1,0 +1,158 @@
+[
+  {
+    "time": 1,
+    "process": 0,
+    "page": 1,
+    "event": "request"
+  },
+  {
+    "time": 1.5,
+    "process": 0,
+    "page": 1,
+    "event": "page_fault"
+  },
+  {
+    "time": 2,
+    "process": 1,
+    "page": 1,
+    "event": "request"
+  },
+  {
+    "time": 2.5,
+    "process": 1,
+    "page": 1,
+    "event": "page_fault"
+  },
+  {
+    "time": 3,
+    "process": 2,
+    "page": 1,
+    "event": "request"
+  },
+  {
+    "time": 3.5,
+    "process": 2,
+    "page": 1,
+    "event": "page_fault"
+  },
+  {
+    "time": 4,
+    "process": 3,
+    "page": 1,
+    "event": "request"
+  },
+  {
+    "time": 4.5,
+    "process": 3,
+    "page": 1,
+    "event": "page_fault"
+  },
+  {
+    "time": 5,
+    "process": 0,
+    "page": 1,
+    "event": "request"
+  },
+  {
+    "time": 6,
+    "process": 0,
+    "page": 3,
+    "event": "request"
+  },
+  {
+    "time": 7,
+    "process": 1,
+    "page": 1,
+    "event": "request"
+  },
+  {
+    "time": 8,
+    "process": 1,
+    "page": 1,
+    "event": "request"
+  },
+  {
+    "time": 9,
+    "process": 1,
+    "page": 0,
+    "event": "request"
+  },
+  {
+    "time": 10,
+    "process": 1,
+    "page": 0,
+    "event": "request"
+  },
+  {
+    "time": 11,
+    "process": 2,
+    "page": 1,
+    "event": "request"
+  },
+  {
+    "time": 12,
+    "process": 2,
+    "page": 1,
+    "event": "request"
+  },
+  {
+    "time": 13,
+    "process": 2,
+    "page": 0,
+    "event": "request"
+  },
+  {
+    "time": 14,
+    "process": 2,
+    "page": 0,
+    "event": "request"
+  },
+  {
+    "time": 15,
+    "process": 2,
+    "page": 0,
+    "event": "request"
+  },
+  {
+    "time": 16,
+    "process": 2,
+    "page": 1,
+    "event": "request"
+  },
+  {
+    "time": 17,
+    "process": 2,
+    "page": 0,
+    "event": "request"
+  },
+  {
+    "time": 18,
+    "process": 2,
+    "page": 0,
+    "event": "request"
+  },
+  {
+    "time": 19,
+    "process": 3,
+    "page": 1,
+    "event": "request"
+  },
+  {
+    "time": 20,
+    "process": 3,
+    "page": 1,
+    "event": "request"
+  },
+  {
+    "time": 21,
+    "process": 3,
+    "page": 0,
+    "event": "request"
+  },
+  {
+    "time": 22,
+    "process": 3,
+    "page": 0,
+    "event": "request"
+  }
+]
